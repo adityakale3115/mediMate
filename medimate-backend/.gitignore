@@ -1,0 +1,28 @@
+# Node.js dependencies
+node_modules/
+uploads/
+
+# Build output
+/build
+/dist
+/coverage
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+
+# Editor folders
+.vscode/
+
+# Yarn/PNP
+.pnp
+.pnp.js
