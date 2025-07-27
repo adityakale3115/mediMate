@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import "../styles/chatbot.css";
 
 const suggestions = [
   'what are symptoms of diabetes?',
@@ -28,11 +29,29 @@ const ChatBot = () => {
     scrollToBottom();
   }, [chatHistory, isTyping]);
 
+  const simulateBotTyping = (fullMessage, prevHistory) => {
+    const words = fullMessage.replace(/\n\n/g, '\n').split(' ');
+    let currentText = '';
+    let index = 0;
+
+    const interval = setInterval(() => {
+      if (index < words.length) {
+        currentText += (index === 0 ? '' : ' ') + words[index];
+        setChatHistory([...prevHistory, { role: 'assistant', content: currentText }]);
+        index++;
+      } else {
+        clearInterval(interval);
+        setIsTyping(false);
+      }
+    }, 80); // faster typing for better UX
+  };
+
   const handleSend = async () => {
-    if (!userInput.trim()) return;
+    if (!userInput.trim() || isTyping) return;
 
     const newHistory = [...chatHistory, { role: 'user', content: userInput }];
     setChatHistory(newHistory);
+    setUserInput('');
     setIsTyping(true);
     setError('');
 
@@ -41,21 +60,18 @@ const ChatBot = () => {
         message: userInput,
       });
 
-      const botMessage = response.data.response;
-      setChatHistory([...newHistory, { role: 'assistant', content: botMessage }]);
+      const botMessage = response.data.response || "Sorry, I didn't get that.";
+      simulateBotTyping(botMessage, newHistory);
     } catch (err) {
       console.error('Frontend Error:', err.message);
-      setError('sorry, i am having trouble connecting to the medical brain 🧠');
-    } finally {
+      setError('❌ Sorry, I am having trouble connecting to the medical brain 🧠');
       setIsTyping(false);
     }
-
-    setUserInput('');
   };
 
   const handleVoiceInput = () => {
     if (!recognition) {
-      alert('speech recognition not supported in this browser.');
+      alert('Speech recognition not supported in this browser.');
       return;
     }
 
@@ -71,7 +87,7 @@ const ChatBot = () => {
 
     recognition.onerror = () => {
       setListening(false);
-      alert('could not capture voice. try again.');
+      alert('🎤 Could not capture voice. Try again.');
     };
   };
 
@@ -83,82 +99,62 @@ const ChatBot = () => {
 
   const handleSuggestionClick = (text) => {
     setUserInput(text);
-    setTimeout(handleSend, 100); // wait for state to update before sending
+    setTimeout(handleSend, 100);
   };
 
   return (
-    <div style={{
-      padding: '20px',
-      maxWidth: '600px',
-      margin: 'auto',
-      background: '#f9f9f9',
-      borderRadius: '10px',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-    }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>💬 MediBot Assistant</h2>
-
-      <div style={{
-        maxHeight: '300px',
-        overflowY: 'auto',
-        padding: '10px',
-        background: '#fff',
-        borderRadius: '8px',
-        marginBottom: '15px',
-        border: '1px solid #ccc'
-      }}>
+    <div className="chatbot-container">
+      <div className="chat-window">
         {chatHistory.map((msg, idx) => (
-          <p key={idx} style={{ margin: '5px 0' }}>
-            <strong style={{ color: msg.role === 'user' ? '#333' : '#007bff' }}>
-              {msg.role === 'user' ? 'you' : 'medibot'}:
-            </strong> {msg.content}
-          </p>
+          <div key={idx} className={`message-wrapper ${msg.role}`}>
+            <div className={`message ${msg.role}`}>
+              {msg.content.split('\n').map((line, i) => (
+                <div key={i}>{line}</div>
+              ))}
+            </div>
+          </div>
         ))}
         {isTyping && (
-          <p><strong>medibot:</strong> typing<span className="dot">.</span><span className="dot">.</span><span className="dot">.</span></p>
+          <div className="message-wrapper bot">
+            <div className="message bot">
+              typing<span className="dot">.</span><span className="dot">.</span><span className="dot">.</span>
+            </div>
+          </div>
         )}
         <div ref={chatEndRef}></div>
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+      <div className="input-area">
         <input
           type="text"
           value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="ask something medical..."
-          style={{
-            flex: 1,
-            padding: '10px',
-            borderRadius: '5px',
-            border: '1px solid #ccc'
+          onChange={(e) => {
+            setUserInput(e.target.value);
+            if (error) setError('');
           }}
+          onKeyDown={handleKeyDown}
+          placeholder="Ask something medical..."
+          disabled={isTyping}
         />
-        <button onClick={handleSend} style={{ padding: '10px 15px' }}>send</button>
-        <button onClick={handleVoiceInput} style={{ padding: '10px 15px' }}>
+        <button onClick={handleSend} disabled={isTyping}>Send</button>
+        <button onClick={handleVoiceInput}>
           {listening ? '🎤...' : '🎤'}
         </button>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+      <div className="suggestions">
         {suggestions.map((suggestion, index) => (
           <button
             key={index}
             onClick={() => handleSuggestionClick(suggestion)}
-            style={{
-              padding: '8px 12px',
-              borderRadius: '20px',
-              border: '1px solid #000000ff',
-              background: '#000000ff',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
+            className="suggestion-btn"
           >
             {suggestion}
           </button>
         ))}
       </div>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="error-msg">{error}</p>}
     </div>
   );
 };

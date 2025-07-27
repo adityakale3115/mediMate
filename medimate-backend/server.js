@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const fetch = require('node-fetch'); // if you're on older Node versions
 
 const app = express();
 const PORT = 5000;
@@ -22,11 +22,15 @@ app.post('/api/chatbot', async (req, res) => {
       body: JSON.stringify({
         model: 'medibot',
         messages: [
-           {
-          role: 'system',
-          content: 'You are Medibot, a helpful medical assistant for users in India. Always give answers relevant to Indian healthcare systems, emergency numbers, hospitals, and medicines available in India.',
-        },
-          { role: 'user', content: message },
+          {
+            role: 'system',
+            content: `
+You are Medibot, a helpful medical assistant for users in India.
+Always give short, understandable responses based on the input text.
+Be contextual and refer to common Indian medical terminology, medicines, and health conditions.
+            `.trim()
+          },
+          { role: 'user', content: message }
         ],
         stream: false,
       }),
@@ -35,13 +39,13 @@ app.post('/api/chatbot', async (req, res) => {
     const data = await ollamaRes.json();
 
     if (data.error || !data.message?.content) {
-      return res.status(500).json({ error: 'No valid response from medibot' });
+      return res.status(500).json({ error: 'No valid response from Medibot' });
     }
 
-    res.json({ response: data.message.content });
+    res.json({ response: data.message.content.trim() });
   } catch (err) {
-    console.error('❌ Error calling medibot:', err);
-    res.status(500).json({ error: 'Failed to connect to medibot' });
+    console.error('❌ Error calling Medibot:', err);
+    res.status(500).json({ error: 'Failed to connect to Medibot' });
   }
 });
 

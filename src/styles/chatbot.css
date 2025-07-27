@@ -109,3 +109,26 @@
   opacity: 1;
   color: #28a745;
 }
+
+
+.suggestions {
+  padding: 0 12px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestion-btn {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #007bff;
+  background: #007bff;
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.error-msg {
+  color: red;
+  padding: 0 1rem;
+}

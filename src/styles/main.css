@@ -1,14 +1,16 @@
 :root {
-  --primary: #0066cc;
-  --primary-dark: #004d99;
-  --primary-darker: #003366;
-  --background: #f0f8ff;
-  --text: #333;
-  --text-muted: #666;
-  --border: #ddd;
+  --primary: #8606ff;               /* Teal accent */
+  --primary-dark: #00b298;
+  --primary-darker: #008475;
+
+  --background: #000000;           /* Dark base */
+  --text: #000000;                 /* High contrast text */
+  --text-muted: #a6a6a6;
+
+  --border: #000000;
   --radius: 12px;
-  --shadow-soft: 0 4px 15px rgba(0, 0, 0, 0.08);
-  --shadow-deep: 0 8px 30px rgba(0, 0, 0, 0.07);
+  --shadow-soft: 0 4px 12px rgba(0, 217, 181, 0.1);
+  --shadow-deep: 0 8px 30px rgba(0, 217, 181, 0.12);
 }
 
 /* === Global Reset & Fonts === */

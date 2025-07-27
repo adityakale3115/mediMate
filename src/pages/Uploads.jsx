@@ -1,204 +1,129 @@
-import React, { useState, useEffect } from "react";
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject
-} from "firebase/storage";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  deleteDoc,
-  doc,
-  where
-} from "firebase/firestore";
-import { storage, db, auth } from "../firebase";
-import "../styles/main.css";
+import React, { useState } from "react";
+import { storage, db } from "../firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-export default function Uploads() {
+const Uploads = () => {
   const [file, setFile] = useState(null);
-  const [previewURL, setPreviewURL] = useState(null);
-  const [uploadStatus, setUploadStatus] = useState("");
-  const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [popupMessage, setPopupMessage] = useState("");
-  const [popupType, setPopupType] = useState(""); // success | error
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((u) => {
-      setUser(u);
-      if (u) {
-        fetchUploadedFiles(u.uid);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const showPopup = (message, type = "success") => {
-    setPopupMessage(message);
-    setPopupType(type);
-    setTimeout(() => {
-      setPopupMessage("");
-    }, 3000);
-  };
-
-  const fetchUploadedFiles = async (uid) => {
-    const q = query(
-      collection(db, "uploads"),
-      where("uid", "==", uid),
-      orderBy("timestamp", "desc")
-    );
-    const snapshot = await getDocs(q);
-    const files = snapshot.docs.map(docSnap => ({
-      id: docSnap.id,
-      ...docSnap.data()
-    }));
-    setUploadedFiles(files);
-  };
+  const [summary, setSummary] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    setFile(selectedFile);
-    setUploadStatus("");
+    setFile(e.target.files[0]);
+  };
 
-    if (selectedFile) {
-      const fileType = selectedFile.type;
-      if (fileType.startsWith("image/") || fileType === "application/pdf") {
-        setPreviewURL(URL.createObjectURL(selectedFile));
-      } else {
-        setPreviewURL(null);
-      }
-    }
+  const extractTextFromPDF = async (file) => {
+    const pdfjsLib = await import("pdfjs-dist/build/pdf");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onload = async () => {
+        const typedArray = new Uint8Array(reader.result);
+        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const text = content.items.map(item => item.str).join(" ");
+          fullText += text + "\n";
+        }
+        resolve(fullText);
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const extractTextFromImage = async (file) => {
+    const Tesseract = await import("tesseract.js");
+    const { data: { text } } = await Tesseract.recognize(file, 'eng');
+    return text;
+  };
+
+  const sendMessageToMedibot = async (extractedText, fileType) => {
+    const prefix = fileType === "pdf"
+      ? "A user uploaded a medical report or diagnostic result."
+      : "A user uploaded a handwritten or printed medical prescription image.";
+
+    const prompt = `
+You are Medibot, a medical assistant for users in India. ${prefix}
+Based on the extracted content below, do the following:
+
+- Summarize the health condition if identifiable.
+- Explain what each medicine or instruction is likely for.
+- Suggest precautions or advise follow-up with a doctor.
+- Keep your response under 6 lines, in simple language.
+
+Prescription or Report:
+${extractedText}
+    `.trim();
+
+    const response = await fetch("http://localhost:5000/api/chatbot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: prompt }),
+    });
+
+    const data = await response.json();
+    return data.response || "Unable to get a response from Medibot.";
   };
 
   const handleUpload = async () => {
-    if (!user) {
-      showPopup("❗ Please log in to upload files.", "error");
-      return;
-    }
-
-    if (!file) {
-      showPopup("❗ Please choose a file first.", "error");
-      return;
-    }
-
-    const filename = `${Date.now()}-${file.name}`;
-    const storageRef = ref(storage, `uploads/${user.uid}/${filename}`);
+    if (!file) return alert("Please select a file.");
+    setLoading(true);
 
     try {
+      const storageRef = ref(storage, `uploads/${file.name}`);
       await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
+      const url = await getDownloadURL(storageRef);
+
+      let extractedText = "";
+      let medibotSummary = "";
+
+      if (file.type === "application/pdf") {
+        extractedText = await extractTextFromPDF(file);
+        medibotSummary = await sendMessageToMedibot(extractedText, "pdf");
+      } else if (file.type.startsWith("image/")) {
+        extractedText = await extractTextFromImage(file);
+        medibotSummary = await sendMessageToMedibot(extractedText, "image");
+      } else {
+        medibotSummary = "Unsupported file type. Please upload a PDF or image.";
+      }
+
+      setSummary(medibotSummary);
 
       await addDoc(collection(db, "uploads"), {
-        uid: user.uid,
-        userEmail: user.email,
-        userName: user.displayName || "",
-        name: file.name,
-        type: file.type,
-        url: downloadURL,
-        storagePath: `uploads/${user.uid}/${filename}`,
-        timestamp: new Date()
+        fileName: file.name,
+        fileUrl: url,
+        summary: medibotSummary,
+        uploadedAt: serverTimestamp()
       });
 
-      showPopup("✅ File uploaded successfully!");
-      setFile(null);
-      setPreviewURL(null);
-      fetchUploadedFiles(user.uid);
-    } catch (error) {
-      console.error("Upload failed:", error);
-      showPopup("❌ Upload failed.", "error");
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Upload failed!");
     }
-  };
 
-  const handleDelete = async (fileId, storagePath) => {
-    try {
-      const fileRef = ref(storage, storagePath);
-      await deleteObject(fileRef);
-      await deleteDoc(doc(db, "uploads", fileId));
-      fetchUploadedFiles(user.uid);
-      showPopup("🗑️ File deleted successfully.");
-    } catch (error) {
-      console.error("Delete failed:", error);
-      showPopup("❌ Failed to delete file.", "error");
-    }
+    setLoading(false);
   };
 
   return (
-    <div className="upload-container">
-      {/* Top popup */}
-      {popupMessage && (
-        <div className={`popup-bar ${popupType}`}>
-          {popupMessage}
+    <div style={{ padding: "20px", maxWidth: "600px", margin: "auto" }}>
+      <h2>Upload Medical Report or Prescription</h2>
+      <input type="file" accept=".pdf,image/*" onChange={handleFileChange} />
+      <button onClick={handleUpload} disabled={loading} style={{ marginTop: "10px" }}>
+        {loading ? "Processing..." : "Upload & Get Suggestions"}
+      </button>
+
+      {summary && (
+        <div style={{ marginTop: "20px", background: "#f9f9f9", padding: "15px", borderRadius: "8px" }}>
+          <h3>Medibot’s Suggestions:</h3>
+          <p style={{ whiteSpace: "pre-wrap" }}>{summary}</p>
         </div>
-      )}
-
-      <h2 className="upload-heading">Upload Your Medical Reports</h2>
-
-      {!user ? (
-        <p className="upload-subtext">🔒 Please log in to upload and manage files.</p>
-      ) : (
-        <>
-          <p className="upload-subtext">
-            Upload prescriptions, reports, or lab files for doctor review and faster check-ins.
-          </p>
-
-          <label htmlFor="file-upload" className="upload-label">
-            Choose File
-            <input
-              type="file"
-              id="file-upload"
-              className="file-input"
-              onChange={handleFileChange}
-            />
-          </label>
-
-          {file && (
-            <p className="selected-file">
-              📎 Selected file: <strong>{file.name}</strong>
-            </p>
-          )}
-
-          {previewURL && (
-            <div className="file-preview">
-              {file.type.startsWith("image/") ? (
-                <img src={previewURL} alt="preview" className="preview-image" />
-              ) : file.type === "application/pdf" ? (
-                <iframe
-                  src={previewURL}
-                  title="PDF Preview"
-                  className="preview-pdf"
-                  frameBorder="0"
-                ></iframe>
-              ) : null}
-            </div>
-          )}
-
-          <button onClick={handleUpload} className="upload-button">Upload</button>
-          <div className="upload-note">Accepted formats: PDF, JPG, PNG, DOCX</div>
-        </>
-      )}
-
-      {user && (
-        <>
-          <h3 className="uploaded-files-title">🗂️ Your Uploads</h3>
-          <ul className="uploaded-files-list">
-            {uploadedFiles.map((f) => (
-              <li key={f.id} className="uploaded-file-item">
-                <a href={f.url} target="_blank" rel="noreferrer">{f.name}</a>
-                <button
-                  onClick={() => handleDelete(f.id, f.storagePath)}
-                  className="delete-button"
-                >
-                  🗑️
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
       )}
     </div>
   );
-}
+};
+
+export default Uploads;
