@@ -1,92 +1,111 @@
 # MediMate.Ai 🩺
 
-MediMate.Ai is a smart medical assistant platform designed to simplify health data handling and management. This is the **Phase 1** of the project, focusing on frontend development using React.
+**MediMate.Ai** is a smart medical assistant web platform designed to simplify health data handling, allow users to upload reports, and get intelligent insights with the help of an AI-powered chatbot.
+
+This is **Phase 1** of the project, focused on frontend development using **React**, with integration of **Firebase** and **AI-based features**.
 
 ---
 
-## 📦 Tech Stack
+## 🚀 Live Features (Phase 1 Complete)
 
-- **Frontend**: React (CRA)
+### ✅ Core Functionalities
+- 🏠 **Home Page** with welcome banner and navigation
+- 🔐 **Authentication (Firebase)**: Email/password login, logout, and protected routes
+- 📄 **Upload Medical Reports** with support for:
+  - All file types (.pdf, .docx, .jpg, .png, etc.)
+  - Real-time upload to **Firebase Storage**
+  - Automatic summary input box for uploaded documents
+  - Storage of metadata (URL, summary, timestamp) in **Firebase Firestore**
+- 🧾 **Uploads Page**:
+  - Lists all uploaded files
+  - Shows summary and download links
+- 💬 **AI ChatBot (MediBot)**:
+  - React-based medical chatbot UI
+  - AI-backed response system via backend
+  - Health-related suggestions (e.g., "symptoms of diabetes", "dosage of amoxicillin")
+  - Typewriter-style typing animation
+- 🌐 **Navigation** using `React Router` for seamless routing
+- 📌 **Sticky Footer** with contact info and useful links
+
+---
+
+## 🧠 Tech Stack
+
+- **Frontend**: React (Create React App)
+- **State**: React Hooks
 - **Styling**: CSS
-- **Deployment-ready**: CRA with `npm run build`
+- **Auth & DB**: Firebase Authentication, Firebase Firestore, Firebase Storage
+- **Chatbot Backend**: Express + Python API (hosted on Docker/EC2)
+- **Deployment**: `npm run build` ready
 
 ---
 
-## ✅ Features Implemented (UI Phase)
+## 📷 Preview
 
-- 🏠 Home Page with Navbar
-- 📄 Upload Medical Reports (file upload input)
-- 📥 Organized Uploads Page
-- 🧭 Navigation using React Router
-- 📌 Sticky Footer with contact and links section
+![MediMate UI](./screenshots/homepage.png)
 
-# Getting Started with Create React App
+---
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 🛠 Getting Started
 
-## Available Scripts
+### Clone & Setup
 
-In the project directory, you can run:
+    ```
+    git clone https://github.com/your-username/MediMate.Ai.git
+    cd MediMate.Ai
+    npm install
 
-### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Start Development Server
+    
+    npm start
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+App will run on http://localhost:3000
 
-### `npm test`
+      ```
+    import { initializeApp } from 'firebase/app';
+    import { getStorage } from 'firebase/storage';
+    import { getFirestore } from 'firebase/firestore';
+    import { getAuth } from 'firebase/auth';
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+    const firebaseConfig = {
+      apiKey: "...",
+      authDomain: "...",
+      projectId: "...",
+      storageBucket: "...",
+      messagingSenderId: "...",
+      appId: "..."
+    };
 
-### `npm run build`
+    const app = initializeApp(firebaseConfig);
+    export const storage = getStorage(app);
+    export const db = getFirestore(app);
+    export const auth = getAuth(app);
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 💡 Coming Soon (Phase 2)
+🧠 Offline-compatible AI summary generation
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+📊 Health dashboard (PDF analysis, graphs, trends)
 
-### `npm run eject`
+🧬 Disease prediction module
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+🔒 Role-based dashboard for doctors & patients
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+📱 Mobile-friendly PWA version
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+🤝 Contributors
+Aditya Kale — Frontend, Firebase, AI Integration
+Poorva Sonawanne - Backend And AIML
+Riya Somani - Backend And AIML
+Samiksha Pawar - Frontend, Firebase, AI Integration
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Special thanks to: OpenAI, Firebase, React, Node.js
 
-## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+💬 Contact
+Got questions or feedback? Reach us at: aditya.kale23@vit.edu
 
-### Code Splitting
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
