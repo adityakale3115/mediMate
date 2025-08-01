@@ -8,11 +8,28 @@ const PORT = 5000;
 app.use(cors());
 app.use(express.json());
 
+// Function to check if a message is medical-related
+const isMedicalQuery = (message) => {
+  const medicalKeywords = [
+    'fever', 'cold', 'cough', 'diabetes', 'bp', 'blood pressure', 'sugar',
+    'headache', 'vomiting', 'medicine', 'tablet', 'syrup', 'infection',
+    'symptom', 'pain', 'dosage', 'side effect', 'disease', 'asthma',
+    'allergy', 'vitamin', 'paracetamol', 'amoxicillin', 'treatment','oxygen'
+  ];
+  
+  return medicalKeywords.some(keyword => message.toLowerCase().includes(keyword));
+};
+
 app.post('/api/chatbot', async (req, res) => {
   const { message } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'No message provided' });
+  }
+
+  // Filter out non-medical queries
+  if (!isMedicalQuery(message)) {
+    return res.status(400).json({ error: 'I can only help with medical or health-related questions.' });
   }
 
   try {

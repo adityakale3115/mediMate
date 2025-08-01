@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, NavLink } from "react-router-dom";
 import Home from "./pages/Home";
-import SymptomChecker from "./pages/SymptomChecker";
+import Doctors from "./pages/Doctors";
 import Appointments from "./pages/Appointments";
 import Uploads from "./pages/Uploads";
+import Profile from "./pages/Profile"; // ✅ Add Profile Page
 import Footer from "./components/Footer";
 import LoginModal from "./components/LoginModal";
 import Chatbot from "./components/ChatBot";
@@ -45,14 +46,24 @@ function App() {
         {/* Navigation */}
         <nav>
           <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}>Home</NavLink>
-          <NavLink to="/symptoms" className={({ isActive }) => isActive ? "active" : ""}>Symptom Checker</NavLink>
+          <NavLink to="/availabledoctors" className={({ isActive }) => isActive ? "active" : ""}>Doctors</NavLink>
           <NavLink to="/appointments" className={({ isActive }) => isActive ? "active" : ""}>Appointments</NavLink>
           <NavLink to="/uploads" className={({ isActive }) => isActive ? "active" : ""}>Uploads</NavLink>
           <NavLink to="/chatbot" className={({ isActive }) => isActive ? "active" : ""}>Chatbot</NavLink>
 
           {user ? (
             <>
-              <span style={{ marginLeft: "1rem" }}>👤 {user.displayName}</span>
+              {/* ✅ 👤 Name Redirects to Profile */}
+              <NavLink
+                to="/profile"
+                style={{
+                  marginLeft: "1rem",
+                  textDecoration: "none",
+                  fontWeight: "bold"
+                }}
+              >
+                👤 {user.displayName}
+              </NavLink>
               <button onClick={handleLogout} style={{ marginLeft: "1rem" }}>Logout</button>
             </>
           ) : (
@@ -64,19 +75,18 @@ function App() {
 
         {/* Login Modal */}
         {showLoginModal && (
-          <LoginModal
-            onClose={() => setShowLoginModal(false)}
-          />
+          <LoginModal onClose={() => setShowLoginModal(false)} />
         )}
 
         {/* Page Content */}
         <div className="page">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/symptoms" element={<SymptomChecker />} />
+            <Route path="/availabledoctors" element={<Doctors />} />
             <Route path="/appointments" element={<Appointments />} />
             <Route path="/uploads" element={<Uploads />} />
             <Route path="/chatbot" element={<Chatbot />} />
+            <Route path="/profile" element={<Profile />} /> {/* ✅ Add Profile Route */}
           </Routes>
         </div>
 

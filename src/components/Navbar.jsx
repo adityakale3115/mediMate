@@ -25,7 +25,10 @@ const Navbar = () => {
 
         {user ? (
           <>
-            <span style={{ marginLeft: "1rem" }}>👤 {user.displayName}</span>
+            <NavLink to="/profile" style={{ marginLeft: "1rem", textDecoration: "none" }}>
+                👤 {user.displayName}
+            </NavLink>
+
             <button onClick={handleLogout} style={{ marginLeft: "1rem" }}>Logout</button>
           </>
         ) : (
